@@ -1,0 +1,63 @@
+gitea:
+  admin:
+    existingSecret: "gitea-admin-secret"
+    email: "raphaeld06@hotmail.fr"
+  
+  config:
+    server:
+      DOMAIN: "gitea.quick-shift.fr"
+      ROOT_URL: "https://gitea.quick-shift.fr/"
+    database:
+      DB_TYPE: sqlite3
+    actions:
+      ENABLED: true
+    security:
+      REVERSE_PROXY_LIMIT: 1
+      REVERSE_PROXY_TRUSTED_PROXIES: "* "
+    service:
+      REQUIRE_SIGNIN_VIEW: true
+      # --- MODIFICATIONS POUR LE SSO ---
+      DISABLE_REGISTRATION: false
+      ALLOW_ONLY_EXTERNAL_REGISTRATION: true
+      # ---------------------------------
+  metrics:
+    enabled: true
+
+ingress:
+  enabled: true
+  className: traefik
+  annotations:
+    cert-manager.io/cluster-issuer: "letsencrypt-prod"
+    ingress.kubernetes.io/ssl-redirect: "true"
+    gethomepage.dev/enabled: "true"
+    gethomepage.dev/name: "Gitea"
+    gethomepage.dev/description: "Usine logicielle CI/CD"
+    gethomepage.dev/group: "Administration"
+    gethomepage.dev/icon: "gitea.png"
+  hosts:
+    - host: gitea.quick-shift.fr
+      paths:
+        - path: /
+          pathType: Prefix
+  tls:
+    - secretName: gitea-tls-cert-quickshift
+      hosts:
+        - gitea.quick-shift.fr
+
+persistence:
+  enabled: true
+  storageClass: "local-path"
+  size: 15Gi
+
+postgresql:
+  enabled: false
+postgresql-ha:
+  enabled: false
+redis-cluster:
+  enabled: false
+redis:
+  enabled: false
+valkey-cluster:
+  enabled: false
+valkey:
+  enabled: false

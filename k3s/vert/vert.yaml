@@ -1,0 +1,77 @@
+---
+# Deployment
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: vert
+  namespace: services
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: vert
+  template:
+    metadata:
+      labels:
+        app: vert
+    spec:
+      containers:
+        - name: vert
+          image: ghcr.io/vert-sh/vert:latest
+          ports:
+            - containerPort: 80
+          resources:
+            requests:
+              cpu: 20m
+              memory: 64Mi
+            limits:
+              cpu: 100m
+              memory: 128Mi
+
+---
+# Service
+apiVersion: v1
+kind: Service
+metadata:
+  name: vert
+  namespace: services
+spec:
+  selector:
+    app: vert
+  ports:
+    - protocol: TCP
+      port: 80
+      targetPort: 80
+
+---
+# Ingress
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: vert
+  namespace: services
+  annotations:
+    cert-manager.io/cluster-issuer: "letsencrypt-prod"
+    gethomepage.dev/enabled: "true"
+    gethomepage.dev/name: "VERT"
+    gethomepage.dev/description: "Convertisseur de fichiers"
+    gethomepage.dev/group: "Outils & Bureautique"
+    gethomepage.dev/icon: "si-convertio" 
+    gethomepage.dev/pod-selector: "app=vert"
+    traefik.ingress.kubernetes.io/router.middlewares: "services-authentik-auth@kubernetescrd"
+spec:
+  tls:
+    - hosts:
+        - vert.quick-shift.fr
+      secretName: vert-tls-quickshift
+  rules:
+    - host: vert.quick-shift.fr
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: vert
+                port:
+                  number: 80

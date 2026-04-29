@@ -1,0 +1,21 @@
+name: Build API Image
+on: [push]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout du code
+        uses: actions/checkout@v3
+
+      - name: Build de l'image (Dossier API uniquement)
+        run: |
+          docker build -t gitea.quick-shift.fr/gitea_admin/flask-api:latest ./API
+
+      - name: Connexion au registre Gitea
+        run: |
+          echo "${{ gitea.token }}" | docker login gitea.quick-shift.fr -u ${{ gitea.actor }} --password-stdin
+
+      - name: Push vers le registre
+        run: |
+          docker push gitea.quick-shift.fr/gitea_admin/flask-api:latest

@@ -1,0 +1,49 @@
+image:
+  repository: stirlingtools/stirling-pdf
+  tag: latest
+
+# 1. Syntaxe Dictionnaire (pour forcer Helm)
+env:
+  SECURITY_ENABLELOGIN: "false"
+  SYSTEM_RESOURCEMONITORENABLED: "false"
+  SYSTEM_DEFAULTLOCALE: "fr-FR"
+
+# 2. Syntaxe Liste (pour forcer Helm)
+envs:
+  - name: SECURITY_ENABLELOGIN
+    value: "false"
+  - name: SYSTEM_RESOURCEMONITORENABLED
+    value: "false"
+  - name: SYSTEM_DEFAULTLOCALE
+    value: "fr-FR"
+
+resources:
+  requests:
+    cpu: 250m       # Réservation minuscule : place garantie sur le serveur
+    memory: 512Mi   # Réservation minuscule : place garantie
+  limits:
+    cpu: "3"        # Autorisé à bourriner au démarrage
+    memory: 4Gi     # Marge massive pour que LibreOffice ne déclenche plus l'alarme RAM
+
+service:
+  type: ClusterIP
+  port: 8080
+
+ingress:
+  enabled: true
+  annotations:
+    cert-manager.io/cluster-issuer: "letsencrypt-prod"
+    gethomepage.dev/enabled: "true"
+    gethomepage.dev/name: "Stirling PDF"
+    gethomepage.dev/description: "Outils & Manipulation PDF"
+    gethomepage.dev/group: "Apps"
+    gethomepage.dev/icon: "stirling-pdf.png"
+  hosts:
+    - host: stirling.quick-shift.fr
+      paths:
+        - path: /
+          pathType: Prefix
+  tls:
+    - secretName: stirling-pdf-tls-quickshift
+      hosts:
+        - stirling.quick-shift.fr

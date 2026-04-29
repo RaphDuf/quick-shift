@@ -1,0 +1,23 @@
+enabled: true
+
+giteaRootURL: "https://gitea.quick-shift.fr"
+
+existingSecret: "runner-secret"
+existingSecretKey: "runner-token"
+
+statefulset:
+  replicas: 1
+  
+  actRunner:
+    config: |
+      log:
+        level: info
+      runner:
+        labels:
+          - "ubuntu-latest:docker://gitea/runner-images:ubuntu-latest"
+          - "docker:docker://docker:dind"
+      cache:
+        enabled: false
+      container:
+        require_docker: true
+        docker_timeout: 300s

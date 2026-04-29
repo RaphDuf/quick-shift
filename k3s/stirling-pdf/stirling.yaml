@@ -1,0 +1,86 @@
+---
+# Deployment
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: stirling-pdf
+  namespace: services
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: stirling-pdf
+  template:
+    metadata:
+      labels:
+        app: stirling-pdf
+    spec:
+      containers:
+        - name: stirling-pdf
+          image: stirlingtools/stirling-pdf:latest
+          ports:
+            - containerPort: 8080
+          env:
+            - name: SECURITY_ENABLELOGIN
+              value: "false"
+            - name: SYSTEM_DEFAULTLOCALE
+              value: "fr-FR"
+            - name: UI_APPNAME
+              value: "Stirling PDF"
+            - name: JAVA_OPTS
+              value: "-XX:MaxMetaspaceSize=256m -Xmx512m"
+          resources:
+            requests:
+              cpu: 50m
+              memory: 256Mi
+            limits:
+              cpu: '1'
+              memory: 3Gi
+
+---
+# Service
+apiVersion: v1
+kind: Service
+metadata:
+  name: stirling-pdf
+  namespace: services
+spec:
+  selector:
+    app: stirling-pdf
+  ports:
+    - protocol: TCP
+      port: 80
+      targetPort: 8080
+
+---
+# Ingress
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: stirling-pdf
+  namespace: services
+  annotations:
+    cert-manager.io/cluster-issuer: "letsencrypt-prod"
+    gethomepage.dev/enabled: "true"
+    gethomepage.dev/name: "Stirling PDF"
+    gethomepage.dev/description: "Outils & Manipulation PDF"
+    gethomepage.dev/group: "Outils & Bureautique"
+    gethomepage.dev/icon: "stirling-pdf.png"
+    gethomepage.dev/pod-selector: "app=stirling-pdf"
+    traefik.ingress.kubernetes.io/router.middlewares: "services-authentik-auth@kubernetescrd"
+spec:
+  tls:
+    - hosts:
+        - stirling.quick-shift.fr
+      secretName: stirling-pdf-tls-quickshift
+  rules:
+    - host: stirling.quick-shift.fr
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: stirling-pdf
+                port:
+                  number: 80

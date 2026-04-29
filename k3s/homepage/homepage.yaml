@@ -1,0 +1,229 @@
+---
+# Gestion des droits pour l'auto-découverte
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: homepage-sa
+  namespace: services
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: homepage-role
+rules:
+  - apiGroups: ["", "networking.k8s.io"]
+    resources: ["nodes", "namespaces", "pods", "services", "ingresses"]
+    verbs: ["get", "list", "watch"] 
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: homepage-binding
+subjects:
+  - kind: ServiceAccount
+    name: homepage-sa
+    namespace: services
+roleRef:
+  kind: ClusterRole
+  name: homepage-role
+  apiGroup: rbac.authorization.k8s.io
+
+---
+# ConfigMap
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: homepage-config
+  namespace: services
+data:
+  settings.yaml: |
+    title: Quick Shift - Hub
+    favicon: https://homepage.quick-shift.fr/logo-compresse.png
+    theme: light
+    headerStyle: clean
+    language: fr
+    hideVersion: true
+    layout:
+      Outils & Bureautique:
+        style: row
+        columns: 4
+      Espace Dev:
+        style: row
+        columns: 4
+      Administration:
+        style: row
+        columns: 5
+        initiallyCollapsed: true
+      Contact:
+        style: row
+        columns: 4
+      Compte & Session:
+        style: row
+        columns: 3
+    pwa:
+      icons:
+        - src: https://homepage.quick-shift.fr/logo-192.png
+          type: image/png
+          sizes: 192x192
+        - src: https://homepage.quick-shift.fr/logo-512.png
+          type: image/png
+          sizes: 512x512
+  kubernetes.yaml: |
+    mode: cluster
+  widgets.yaml: |
+    - logo:
+        icon: https://homepage.quick-shift.fr/logo-compresse.png
+    - datetime:
+        format:
+          dateStyle: long
+          timeStyle: short
+    - openmeteo:
+        timezone: Europe/Paris
+        units: metric 
+  services.yaml: |
+    - Outils & Bureautique: []
+    - Espace Dev: []
+    - Administration: []
+
+  bookmarks.yaml: |
+    - Contact:
+        - GitHub:
+            - abbr: GH
+              href: https://github.com/RaphDuf 
+              icon: mdi-github
+        - LinkedIn:
+            - abbr: IN
+              href: https://www.linkedin.com/in/raphael-duflot/
+              icon: mdi-linkedin
+        - Email:
+            - abbr: MAIL
+              href: mailto:r.duflot@quick-shift.fr
+              icon: mdi-email-fast-outline
+    - Compte & Session:
+        - Connexion Authentik (SSO):
+            - abbr: IN
+              href: https://auth.quick-shift.fr/if/user/
+              icon: mdi-login
+        - Déconnexion Authentik (SSO):
+            - abbr: SSO
+              href: https://auth.quick-shift.fr/if/flow/default-invalidation-flow/
+              icon: mdi-logout
+
+---
+# Deployment
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: homepage
+  namespace: services
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: homepage
+  template:
+    metadata:
+      labels:
+        app: homepage
+    spec:
+      serviceAccountName: homepage-sa
+      containers:
+        - name: homepage
+          image: ghcr.io/gethomepage/homepage:latest
+          env:
+            - name: HOMEPAGE_ALLOWED_HOSTS
+              value: "homepage.quick-shift.fr"
+          ports:
+            - containerPort: 3000
+          resources:
+            requests:
+              cpu: 50m
+              memory: 100Mi
+            limits:
+              cpu: 200m
+              memory: 250Mi
+          volumeMounts:
+            - name: config-volume
+              mountPath: /app/config/settings.yaml
+              subPath: settings.yaml
+            - name: config-volume
+              mountPath: /app/config/kubernetes.yaml
+              subPath: kubernetes.yaml
+            - name: config-volume
+              mountPath: /app/config/widgets.yaml
+              subPath: widgets.yaml
+            - name: config-volume
+              mountPath: /app/config/services.yaml
+              subPath: services.yaml
+            - name: config-volume
+              mountPath: /app/config/bookmarks.yaml
+              subPath: bookmarks.yaml
+            - name: logo-volume
+              mountPath: /app/public/logo-compresse.png
+              subPath: logo-compresse.png
+            - name: logo-512-volume
+              mountPath: /app/public/logo-512.png
+              subPath: logo-512.png
+            - name: logo-192-volume
+              mountPath: /app/public/logo-192.png
+              subPath: logo-192.png
+      volumes:
+        - name: config-volume
+          configMap:
+            name: homepage-config
+        - name: logo-volume
+          configMap:
+            name: homepage-logo
+        - name: logo-512-volume
+          configMap:
+            name: homepage-logo-512
+        - name: logo-192-volume
+          configMap:
+            name: homepage-logo-192
+
+---
+# Service
+apiVersion: v1
+kind: Service
+metadata:
+  name: homepage
+  namespace: services
+spec:
+  selector:
+    app: homepage
+  ports:
+    - protocol: TCP
+      port: 80
+      targetPort: 3000
+
+---
+# Exposition publique
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: homepage
+  namespace: services
+  annotations:
+    cert-manager.io/cluster-issuer: "letsencrypt-prod"
+    gethomepage.dev/enabled: "true"
+    gethomepage.dev/name: "Homepage"
+    gethomepage.dev/description: "Tableau de bord central"
+    gethomepage.dev/group: "Administration"
+    gethomepage.dev/icon: "homepage.png"
+    gethomepage.dev/pod-selector: "app=homepage"
+spec:
+  tls:
+    - hosts:
+        - homepage.quick-shift.fr
+      secretName: homepage-tls-quickshift
+  rules:
+    - host: homepage.quick-shift.fr
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: homepage
+                port:
+                  number: 80

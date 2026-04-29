@@ -1,0 +1,77 @@
+---
+# Déploiement
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: qrding
+  namespace: services
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: qrding
+  template:
+    metadata:
+      labels:
+        app: qrding
+    spec:
+      containers:
+        - name: qrding
+          image: ghcr.io/rishikanthc/qrding:latest
+          ports:
+            - containerPort: 3000
+          resources:
+            requests:
+              cpu: 10m
+              memory: 32Mi
+            limits:
+              cpu: 100m
+              memory: 128Mi
+
+---
+# Service
+apiVersion: v1
+kind: Service
+metadata:
+  name: qrding
+  namespace: services
+spec:
+  selector:
+    app: qrding
+  ports:
+    - protocol: TCP
+      port: 80
+      targetPort: 3000
+
+---
+# Ingress
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: qrding
+  namespace: services
+  annotations:
+    cert-manager.io/cluster-issuer: "letsencrypt-prod"
+    gethomepage.dev/enabled: "true"
+    gethomepage.dev/name: "QRding"
+    gethomepage.dev/description: "Générateur de QR Codes"
+    gethomepage.dev/group: "Outils & Bureautique"
+    gethomepage.dev/icon: "mdi-qrcode"
+    gethomepage.dev/pod-selector: "app=qrding"
+    traefik.ingress.kubernetes.io/router.middlewares: "services-authentik-auth@kubernetescrd"
+spec:
+  tls:
+    - hosts:
+        - qrding.quick-shift.fr
+      secretName: qrding-tls-quickshift
+  rules:
+    - host: qrding.quick-shift.fr
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: qrding
+                port:
+                  number: 80

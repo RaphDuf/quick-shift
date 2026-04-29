@@ -1,0 +1,82 @@
+---
+authentik:
+  error_reporting:
+    enabled: false
+  redis:
+    host: "authentik-redis-master"
+
+postgresql:
+  enabled: true
+  auth:
+    database: "authentik"
+    username: "authentik"
+    existingSecret: "authentik-pg-secret"
+
+redis:
+  enabled: true
+  architecture: standalone
+  auth:
+    enabled: false
+  master:
+    persistence:
+      enabled: false
+
+server:
+  env:
+    - name: AUTHENTIK_SECRET_KEY
+      valueFrom:
+        secretKeyRef:
+          name: authentik-core-secret
+          key: secret-key
+    - name: AUTHENTIK_POSTGRESQL__PASSWORD
+      valueFrom:
+        secretKeyRef:
+          name: authentik-pg-secret
+          key: password
+          
+  resources:
+    requests:
+      cpu: 50m
+      memory: 256Mi
+    limits:
+      cpu: 500m
+      memory: 1024Mi
+  
+  ingress:
+    enabled: true
+    ingressClassName: traefik
+    annotations:
+      cert-manager.io/cluster-issuer: "letsencrypt-prod"
+      gethomepage.dev/enabled: "true"
+      gethomepage.dev/name: "Authentik"
+      gethomepage.dev/description: "Gestion des Identités (SSO)"
+      gethomepage.dev/group: "Administration"
+      gethomepage.dev/icon: "authentik.png"
+      gethomepage.dev/pod-selector: "app.kubernetes.io/instance=authentik"
+    hosts:
+      - auth.quick-shift.fr
+    tls:
+      - secretName: authentik-tls-quickshift
+        hosts:
+          - auth.quick-shift.fr
+
+worker:
+  env:
+    - name: AUTHENTIK_SECRET_KEY
+      valueFrom:
+        secretKeyRef:
+          name: authentik-core-secret
+          key: secret-key
+    - name: AUTHENTIK_POSTGRESQL__PASSWORD
+      valueFrom:
+        secretKeyRef:
+          name: authentik-pg-secret
+          key: password
+          
+  resources:
+    requests:
+      cpu: 50m
+      memory: 256Mi
+    limits:
+      cpu: 500m
+      memory: 1024Mi

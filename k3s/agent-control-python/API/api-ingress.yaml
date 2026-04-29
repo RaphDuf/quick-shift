@@ -1,0 +1,31 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: api-controle-ingress
+  namespace: apps
+  annotations:
+    cert-manager.io/cluster-issuer: "letsencrypt-prod"
+    ingress.kubernetes.io/ssl-redirect: "true"
+    gethomepage.dev/enabled: "true"
+    gethomepage.dev/name: "API Contrôle"
+    gethomepage.dev/description: "Contrôle de poste à distance"
+    gethomepage.dev/group: "Espace Dev"
+    gethomepage.dev/icon: "python.png"
+    gethomepage.dev/pod-selector: "app=api-controle"
+spec:
+  ingressClassName: traefik
+  tls:
+  - hosts:
+    - api-python.quick-shift.fr
+    secretName: api-controle-tls-quickshift
+  rules:
+  - host: api-python.quick-shift.fr
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: api-controle-service
+            port:
+              number: 80

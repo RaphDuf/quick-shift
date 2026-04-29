@@ -1,0 +1,63 @@
+nextcloud:
+  host: "nextcloud.quick-shift.fr"
+  existingSecret:
+    enabled: true
+    secretName: "nextcloud-admin-secret"
+    usernameKey: "username"
+    passwordKey: "password" # gitleaks:allow
+
+extraEnv:
+  - name: OVERWRITEPROTOCOL
+    value: "https"
+  - name: OVERWRITEHOST
+    value: "nextcloud.quick-shift.fr"
+  - name: OVERWRITECLIURL
+    value: "https://nextcloud.quick-shift.fr"
+  - name: TRUSTED_PROXIES
+    value: "xxx/16 xxx/16 xxx/8 127.0.0.1"
+  - name: NEXTCLOUD_TRUSTED_DOMAINS
+    value: "nextcloud.quick-shift.fr"
+
+ingress:
+  enabled: true
+  className: traefik
+  annotations:
+    cert-manager.io/cluster-issuer: "letsencrypt-prod"
+    ingress.kubernetes.io/ssl-redirect: "true"
+    gethomepage.dev/enabled: "true"
+    gethomepage.dev/name: "NextCloud"
+    gethomepage.dev/description: "Cloud Personnel & Fichiers"
+    gethomepage.dev/group: "Outils & Bureautique"
+    gethomepage.dev/icon: "nextcloud.png"
+  hosts:
+    - host: nextcloud.quick-shift.fr
+      paths:
+        - path: /
+          pathType: Prefix
+  tls:
+    - secretName: nextcloud-tls-cert-quickshift
+      hosts:
+        - nextcloud.quick-shift.fr
+
+persistence:
+  enabled: true
+  storageClass: "local-path"
+  size: 8Gi
+
+mariadb:
+  enabled: false
+
+postgresql:
+  enabled: true
+  global:
+    postgresql:
+      auth:
+        existingSecret: "nextcloud-pg-secret"
+        secretKeys:
+          adminPasswordKey: "postgres-password" # gitleaks:allow
+          userPasswordKey: "postgres-password" # gitleaks:allow
+  primary:
+    persistence:
+      enabled: true
+      storageClass: "local-path"
+      size: 8Gi

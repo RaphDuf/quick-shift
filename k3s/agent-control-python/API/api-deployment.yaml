@@ -1,0 +1,42 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: api-controle
+  namespace: apps
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: api-controle
+  template:
+    metadata:
+      labels:
+        app: api-controle
+    spec:
+      imagePullSecrets:
+      - name: gitea-registry-secret
+      containers:
+      - name: api
+        image: gitea.quick-shift.fr/gitea_admin/flask-api:latest
+        imagePullPolicy: Always
+        ports:
+        - containerPort: 5000
+        # ON INJECTE TES VARIABLES D'ENVIRONNEMENT 👇
+        envFrom:
+        - secretRef:
+            name: supabase-secret
+        - secretRef:
+            name: groq-secret
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: api-controle-service
+  namespace: apps
+spec:
+  selector:
+    app: api-controle
+  ports:
+    - protocol: TCP
+      port: 80
+      targetPort: 5000

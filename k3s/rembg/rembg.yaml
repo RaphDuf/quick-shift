@@ -1,0 +1,189 @@
+---
+# Backend API
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: rembg-api
+  namespace: apps
+  labels:
+    app.kubernetes.io/name: rembg-api
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: rembg-api
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: rembg-api
+    spec:
+      containers:
+        - name: rembg
+          image: python:3.11-slim
+          command: ["/bin/bash", "-c"]
+          args:
+            - |
+              echo "Mise à jour du système et installation des libs graphiques (OpenCV)..."
+              apt-get update && apt-get install -y libgl1 libglib2.0-0
+              
+              echo "Installation de Rembg et du moteur IA (CPU)..."
+              pip install --no-cache-dir "rembg[cpu,cli]"
+              
+              echo "Démarrage du moteur IA..."
+              rembg s --port 5000 --host 0.0.0.0
+          ports:
+            - containerPort: 5000
+              name: http
+          resources:
+            limits:
+              memory: "2Gi"
+            requests:
+              memory: "512Mi"
+              cpu: "100m"
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: rembg-api
+  namespace: apps 
+  annotations:
+    gethomepage.dev/enabled: "true"
+    gethomepage.dev/name: "Rembg API (Backend)"
+    gethomepage.dev/description: "Moteur IA de détourage"
+    gethomepage.dev/group: "Espace Dev" 
+    gethomepage.dev/icon: "mdi-brain"
+    gethomepage.dev/pod-selector: "app.kubernetes.io/name=rembg-api"
+spec:
+  selector:
+    app.kubernetes.io/name: rembg-api
+  ports:
+    - protocol: TCP
+      port: 5000
+      targetPort: http
+
+---
+# Frontend webui
+# ==========================================
+# 2. LE FRONTEND (WebUI - Namespace: services)
+# ==========================================
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: rembg-webui
+  namespace: services
+  labels:
+    app.kubernetes.io/name: rembg-webui
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: rembg-webui
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: rembg-webui
+    spec:
+      containers:
+        - name: webui
+          image: python:3.11-slim
+          command: ["/bin/bash", "-c"]
+          args:
+            - |
+              pip install --no-cache-dir gradio requests
+              cat << 'EOF' > app.py
+              import gradio as gr
+              import requests
+              import os
+
+              # L'URL propre, sans balises parasites
+              API_URL = os.getenv("REMBG_API_URL", "http://rembg-api.apps.svc.cluster.local:5000") + "/api/remove"
+
+              def process_image(image_file):
+                  with open(image_file, "rb") as f:
+                      files = {'file': f}
+                      response = requests.post(API_URL, files=files)
+                      if response.status_code == 200:
+                          out_path = "output.png"
+                          with open(out_path, "wb") as out:
+                              out.write(response.content)
+                          return out_path
+                      else:
+                          raise Exception(f"Erreur du Backend (API): {response.status_code}")
+
+              interface = gr.Interface(
+                  fn=process_image,
+                  inputs=gr.Image(type="filepath", label="Image d'origine"),
+                  outputs=gr.Image(type="filepath", label="Résultat (détouré)"),
+                  title="Détourage IA - Quick Shift",
+                  description="Uploadez une image pour supprimer son arrière-plan automatiquement."
+              )
+
+              interface.launch(server_name="0.0.0.0", server_port=7860)
+              EOF
+              # Le paramètre -u (unbuffered) force Python à afficher les logs en direct
+              python -u app.py
+          ports:
+            - containerPort: 7860
+              name: web
+          env:
+            - name: REMBG_API_URL
+              # L'URL propre, sans balises parasites
+              value: "http://rembg-api.apps.svc.cluster.local:5000"
+          # La fameuse Probe qui empêche l'erreur 502
+          readinessProbe:
+            httpGet:
+              path: /
+              port: 7860
+            initialDelaySeconds: 45 # On attend 45s que pip finisse avant de tester
+            periodSeconds: 5
+          resources:
+            limits:
+              memory: "512Mi"              
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: rembg-webui
+  namespace: services 
+spec:
+  selector:
+    app.kubernetes.io/name: rembg-webui
+  ports:
+    - protocol: TCP
+      port: 7860
+      targetPort: web
+
+---
+# Ingress
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: rembg-webui
+  namespace: services 
+  annotations:
+    cert-manager.io/cluster-issuer: "letsencrypt-prod"
+    traefik.ingress.kubernetes.io/router.middlewares: "services-authentik-auth@kubernetescrd"
+    gethomepage.dev/enabled: "true"
+    gethomepage.dev/name: "Détourage IA"
+    gethomepage.dev/description: "Supprimer l'arrière-plan"
+    gethomepage.dev/group: "Outils & Bureautique" 
+    gethomepage.dev/icon: "mdi-image-auto-adjust"
+    gethomepage.dev/href: "https://rembg.quick-shift.fr" 
+    gethomepage.dev/pod-selector: "app.kubernetes.io/name=rembg-webui"
+spec:
+  rules:
+    - host: rembg.quick-shift.fr 
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: rembg-webui
+                port:
+                  number: 7860
+  tls:
+    - hosts:
+        - rembg.quick-shift.fr 
+      secretName: rembg-webui-tls

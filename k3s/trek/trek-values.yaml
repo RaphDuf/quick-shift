@@ -1,0 +1,37 @@
+env:
+  NODE_ENV: "production"
+  APP_URL: "https://trek.quick-shift.fr"
+  OIDC_ISSUER: "https://auth.quick-shift.fr/application/o/trek/"
+  OIDC_DISCOVERY_URL: "https://auth.quick-shift.fr/application/o/trek/.well-known/openid-configuration"
+  OIDC_CLIENT_ID: "EhjpFOe8TimQDLlfsGzJJA5kGoVYYMN1AcwM0dFC" # gitleaks:allow
+  OIDC_DISPLAY_NAME: "Authentik"
+  OIDC_ONLY: "true"
+  OIDC_ADMIN_CLAIM: "groups"
+  OIDC_ADMIN_VALUE: "Power Users"
+
+persistence:
+  enabled: true
+  data:
+    size: 2Gi
+  uploads:
+    size: 5Gi
+
+ingress:
+  enabled: true
+  className: "traefik"
+  annotations:
+    cert-manager.io/cluster-issuer: "letsencrypt-prod"
+    gethomepage.dev/enabled: "true"
+    gethomepage.dev/name: "TREK"
+    gethomepage.dev/description: "Planificateur de Voyages"
+    gethomepage.dev/group: "Outils & Bureautique"
+    gethomepage.dev/icon: "adventure-log.png"
+    gethomepage.dev/pod-selector: "app=trek"
+  hosts:
+    - host: trek.quick-shift.fr
+      paths:
+        - "/"  
+  tls:
+    - secretName: trek-tls
+      hosts:
+        - trek.quick-shift.fr
