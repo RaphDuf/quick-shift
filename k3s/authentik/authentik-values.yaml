@@ -1,18 +1,37 @@
 ---
-env:
-  AUTHENTIK_EMAIL__HOST: "ssl0.ovh.net"
-  AUTHENTIK_EMAIL__PORT: "465"
-  AUTHENTIK_EMAIL__USERNAME: "no-reply@quick-shift.fr"
-  AUTHENTIK_EMAIL__USE_SSL: "true"
-  AUTHENTIK_EMAIL__USE_TLS: "false"
-  AUTHENTIK_EMAIL__TIMEOUT: "10"
-  AUTHENTIK_EMAIL__FROM: "Quick-Shift <no-reply@quick-shift.fr>"
+global:
+  env:
+    - name: AUTHENTIK_EMAIL__HOST
+      value: "ssl0.ovh.net"
+    - name: AUTHENTIK_EMAIL__PORT
+      value: "465"
+    - name: AUTHENTIK_EMAIL__USERNAME
+      value: "no-reply@quick-shift.fr"
+    - name: AUTHENTIK_EMAIL__USE_SSL
+      value: "true"
+    - name: AUTHENTIK_EMAIL__USE_TLS
+      value: "false"
+    - name: AUTHENTIK_EMAIL__TIMEOUT
+      value: "10"
+    - name: AUTHENTIK_EMAIL__FROM
+      value: "Quick-Shift <no-reply@quick-shift.fr>"
+    - name: AUTHENTIK_EMAIL__PASSWORD
+      valueFrom:
+        secretKeyRef:
+          name: authentik-smtp-secret
+          key: smtp-password
 
-envValueFrom:
-  AUTHENTIK_EMAIL__PASSWORD:
-    secretKeyRef:
-      name: authentik-smtp-secret
-      key: smtp-password
+    - name: AUTHENTIK_SECRET_KEY
+      valueFrom:
+        secretKeyRef:
+          name: authentik-core-secret
+          key: secret-key
+    - name: AUTHENTIK_POSTGRESQL__PASSWORD
+      valueFrom:
+        secretKeyRef:
+          name: authentik-pg-secret
+          key: password
+
 
 authentik:
   error_reporting:
@@ -37,18 +56,6 @@ redis:
       enabled: false
 
 server:
-  env:
-    - name: AUTHENTIK_SECRET_KEY
-      valueFrom:
-        secretKeyRef:
-          name: authentik-core-secret
-          key: secret-key
-    - name: AUTHENTIK_POSTGRESQL__PASSWORD
-      valueFrom:
-        secretKeyRef:
-          name: authentik-pg-secret
-          key: password
-          
   resources:
     requests:
       cpu: 50m
@@ -76,18 +83,6 @@ server:
           - auth.quick-shift.fr
 
 worker:
-  env:
-    - name: AUTHENTIK_SECRET_KEY
-      valueFrom:
-        secretKeyRef:
-          name: authentik-core-secret
-          key: secret-key
-    - name: AUTHENTIK_POSTGRESQL__PASSWORD
-      valueFrom:
-        secretKeyRef:
-          name: authentik-pg-secret
-          key: password
-          
   resources:
     requests:
       cpu: 50m
