@@ -56,6 +56,13 @@ redis:
       enabled: false
 
 server:
+  volumes:
+    - name: custom-templates
+      configMap:
+        name: authentik-custom-templates
+  volumeMounts:
+    - name: custom-templates
+      mountPath: /templates/custom-quickshift
   resources:
     requests:
       cpu: 50m
@@ -83,6 +90,13 @@ server:
           - auth.quick-shift.fr
 
 worker:
+  volumes:
+    - name: custom-templates
+      configMap:
+        name: authentik-custom-templates
+  volumeMounts:
+    - name: custom-templates
+      mountPath: /templates/custom-quickshift
   resources:
     requests:
       cpu: 50m
