@@ -7,6 +7,9 @@ data:
   password_reset.html: |
     {% extends "email/base.html" %}
     {% load i18n humanize %}
+    {% block header %}
+    {# supprime logo Authentik #}
+    {% endblock %}
     {% block content %}
     <p>Bonjour <b>{{ user.name|default:user.username }}</b>,</p>
     
@@ -22,7 +25,7 @@ data:
       </table>
       <p><small><i>
         {% blocktrans with expires=expires|naturaltime %}
-        (Note : Par mesure de sécurité, ce lien est à usage unique et est valide {{ expires }}).
+        (Note : Par mesure de sécurité, ce lien est à usage unique et expire {{ expires }}).
         {% endblocktrans %}
       </i></small></p>
       

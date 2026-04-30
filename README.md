@@ -540,6 +540,10 @@ flowchart TB
         ```
     - Ajouter les variables env au fichier [values](./k3s/authentik/authentik-values.yaml)
     - Re deploy le helm 
+    - Créer des [templates](./k3s/authentik/custom-email-template.yaml)
+    - Mise à jour du values
+    - Dans Authentik, acceder à Etapes -> default-recovery-email puis sélectionner le template créé et modifier le Subject
+- Configuration de Marques, pour ajouter le logo, le domaine, et l'app par défaut 
 
 ### RemBG API + WebUI
 - Création du [yaml](./k3s/rembg/rembg.yaml)
