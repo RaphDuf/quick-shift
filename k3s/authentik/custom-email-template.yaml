@@ -4,79 +4,61 @@ metadata:
   name: authentik-custom-templates
   namespace: authentik 
 data:
-  # ==========================================
-  # CRÉATION DE COMPTE
-  # ==========================================
-  account_welcome.html: |
-    {% extends "email/base.html" %}
-    {% load i18n humanize %}
-    {% block content %}
-    <p>Bonjour <b>{{ user.name|default:user.username }}</b>,</p>
-    
-    <p>Bienvenue sur l'infrastructure logicielle de Quick Shift ! Je vous informe que votre compte a été créé avec succès.</p>
-    
-    <p>Afin de garantir la sécurité de nos données, votre profil a été assigné à un groupe spécifque. Par ailleurs, veuillez noter que l'intégralité de nos applications requiert obligatoirement une connexion via notre système d'authentification centralisé (Authentik).</p>
-    <p>Selon les droits accordés à votre groupe, il est donc normal que l'accès à certaines applications spécifiques vous soit automatiquement refusé.</p>
-    
-    <p>Pour activer votre compte, je vous invite à suivre ces deux étapes :</p>
-    
-    <h3 style="color: #2b3a42;">Étape 1 : Création de votre mot de passe</h3>
-    <p>Veuillez définir votre mot de passe personnel et confidentiel en cliquant sur le lien sécurisé suivant :</p>
-    
-    <table role="presentation" border="0" cellpadding="0" cellspacing="0" class="btn btn-primary">
-      <tbody><tr><td align="center"><table role="presentation" border="0" cellpadding="0" cellspacing="0"><tbody><tr>
-        <td> <a href="{{ url }}" target="_blank">Créer mon mot de passe</a> </td>
-      </tr></tbody></table></td></tr></tbody>
-    </table>
-    <p><small><i>(Note : Ce lien est à usage unique et possède une durée de validité limitée).</i></small></p>
-    
-    <h3 style="color: #2b3a42;">Étape 2 : Accès à vos outils</h3>
-    <p>Une fois votre mot de passe enregistré, vous pourrez retrouver l'ensemble des services sur le tableau de bord centralisé. Vous pouvez y accéder à tout moment via l'adresse suivante : 👉 <a href="https://homepage.quick-shift.fr"><b>homepage.quick-shift.fr</b></a></p>
-    
-    <p>💡 <b>Astuce :</b> Vous pouvez installer ce tableau de bord comme une application autonome sur votre ordinateur ou votre smartphone. Une fois sur la page, il vous suffit de cliquer sur l'icône d'installation (le petit écran avec une flèche ou "Installer l'application") située tout à droite dans la barre d'adresse de votre navigateur web.</p>
-    
-    <p>Pour vous connecter aux différentes applications (comme Nextcloud, par exemple), il vous suffira de cliquer sur le bouton d'authentification Authentik et d'utiliser votre adresse email ainsi que le mot de passe que vous venez de définir.</p>
-    
-    <hr style="border: 0; border-bottom: 1px solid #eee; margin: 20px 0;">
-    
-    <p>En cas de difficulté lors de votre première connexion ou si vous avez des questions concernant vos droits d'accès, n'hésitez pas à me contacter sur le mail suivant : <a href="mailto:r.duflot@quick-shift.fr">r.duflot@quick-shift.fr</a></p>
-    
-    <p><small><i>Ce mail est automatique, merci de ne pas répondre.</i></small></p>
-    
-    <br>
-    <img src="https://raw.githubusercontent.com/RaphDuf/quick-shift/refs/heads/main/images/logo-anime.gif" alt="Quick Shift Logo" width="150">
-    <p><b>Quick Shift</b> | <i>"Passer à la vitesse supérieure"</i></p>
-    {% endblock %}
-
-  # ==========================================
-  # RÉINITIALISATION MOT DE PASSE
-  # ==========================================
   password_reset.html: |
     {% extends "email/base.html" %}
     {% load i18n humanize %}
     {% block content %}
     <p>Bonjour <b>{{ user.name|default:user.username }}</b>,</p>
     
-    <p>Suite à votre demande, la procédure de réinitialisation de votre mot de passe pour l'infrastructure logicielle de Quick Shift a été initiée.</p>
+    {% if user.has_usable_password %}
+      <p>Suite à votre demande, la procédure de réinitialisation de votre mot de passe pour l'infrastructure logicielle de Quick Shift a été initiée.</p>
+      
+      <p>Veuillez définir votre nouveau mot de passe personnel et confidentiel en cliquant sur le lien sécurisé suivant :</p>
+      
+      <table role="presentation" border="0" cellpadding="0" cellspacing="0" class="btn btn-primary">
+        <tbody><tr><td align="center"><table role="presentation" border="0" cellpadding="0" cellspacing="0"><tbody><tr>
+          <td> <a href="{{ url }}" target="_blank">Réinitialiser mon mot de passe</a> </td>
+        </tr></tbody></table></td></tr></tbody>
+      </table>
+      <p><small><i>
+        {% blocktrans with expires=expires|naturaltime %}
+        (Note : Par mesure de sécurité, ce lien est à usage unique et est valide {{ expires }}).
+        {% endblocktrans %}
+      </i></small></p>
+      
+      <p>Une fois votre nouveau mot de passe enregistré, vos accès seront immédiatement mis à jour sur notre système d'authentification centralisé. Vous pourrez alors vous reconnecter à l'ensemble de vos services via votre tableau de bord habituel : <a href="https://homepage.quick-shift.fr"><b>homepage.quick-shift.fr</b></a></p>
+      
+      <p> <b>Information de sécurité :</b> Si vous n'êtes pas à l'origine de cette demande de réinitialisation, veuillez ignorer cet e-mail. Votre mot de passe actuel restera inchangé et votre compte demeure sécurisé.</p>
+      
+      <hr style="border: 0; border-bottom: 1px solid #eee; margin: 20px 0;">
     
-    <p>Veuillez définir votre nouveau mot de passe personnel et confidentiel en cliquant sur le lien sécurisé suivant :</p>
-    
-    <table role="presentation" border="0" cellpadding="0" cellspacing="0" class="btn btn-primary">
-      <tbody><tr><td align="center"><table role="presentation" border="0" cellpadding="0" cellspacing="0"><tbody><tr>
-        <td> <a href="{{ url }}" target="_blank">Réinitialiser mon mot de passe</a> </td>
-      </tr></tbody></table></td></tr></tbody>
-    </table>
-    <p><small><i>
-      {% blocktrans with expires=expires|naturaltime %}
-      (Note : Par mesure de sécurité, ce lien est à usage unique et est valide {{ expires }}).
-      {% endblocktrans %}
-    </i></small></p>
-    
-    <p>Une fois votre nouveau mot de passe enregistré, vos accès seront immédiatement mis à jour sur notre système d'authentification centralisé. Vous pourrez alors vous reconnecter à l'ensemble de vos services via votre tableau de bord habituel : 👉 <a href="https://homepage.quick-shift.fr"><b>homepage.quick-shift.fr</b></a></p>
-    
-    <p>💡 <b>Information de sécurité :</b> Si vous n'êtes pas à l'origine de cette demande de réinitialisation, veuillez ignorer cet e-mail. Votre mot de passe actuel restera inchangé et votre compte demeure sécurisé.</p>
-    
-    <hr style="border: 0; border-bottom: 1px solid #eee; margin: 20px 0;">
+    {% else %}
+      <p>Bienvenue sur l'infrastructure logicielle de Quick Shift ! Je vous informe que votre compte a été créé avec succès.</p>
+      
+      <p>Afin de garantir la sécurité de nos données, votre profil a été assigné à un groupe spécifque. Par ailleurs, veuillez noter que l'intégralité de nos applications requiert obligatoirement une connexion via notre système d'authentification centralisé (Authentik).</p>
+      <p>Selon les droits accordés à votre groupe, il est donc normal que l'accès à certaines applications spécifiques vous soit automatiquement refusé.</p>
+      
+      <p>Pour activer votre compte, je vous invite à suivre ces deux étapes :</p>
+      
+      <h3 style="color: #2b3a42;">Étape 1 : Création de votre mot de passe</h3>
+      <p>Veuillez définir votre mot de passe personnel et confidentiel en cliquant sur le lien sécurisé suivant :</p>
+      
+      <table role="presentation" border="0" cellpadding="0" cellspacing="0" class="btn btn-primary">
+        <tbody><tr><td align="center"><table role="presentation" border="0" cellpadding="0" cellspacing="0"><tbody><tr>
+          <td> <a href="{{ url }}" target="_blank">Créer mon mot de passe</a> </td>
+        </tr></tbody></table></td></tr></tbody>
+      </table>
+      <p><small><i>(Note : Ce lien est à usage unique et possède une durée de validité limitée).</i></small></p>
+      
+      <h3 style="color: #2b3a42;">Étape 2 : Accès à vos outils</h3>
+      <p>Une fois votre mot de passe enregistré, vous pourrez retrouver l'ensemble des services sur le tableau de bord centralisé. Vous pouvez y accéder à tout moment via l'adresse suivante : <a href="https://homepage.quick-shift.fr"><b>homepage.quick-shift.fr</b></a></p>
+      
+      <p> <b>Astuce :</b> Vous pouvez installer ce tableau de bord comme une application autonome sur votre ordinateur ou votre smartphone. Une fois sur la page, il vous suffit de cliquer sur l'icône d'installation (le petit écran avec une flèche ou "Installer l'application") située tout à droite dans la barre d'adresse de votre navigateur web.</p>
+      
+      <p>Pour vous connecter aux différentes applications (comme Nextcloud, par exemple), il vous suffira de cliquer sur le bouton d'authentification Authentik et d'utiliser votre adresse email ainsi que le mot de passe que vous venez de définir.</p>
+      
+      <hr style="border: 0; border-bottom: 1px solid #eee; margin: 20px 0;">
+    {% endif %}
     
     <p>En cas de difficulté lors de votre première connexion ou si vous avez des questions concernant vos droits d'accès, n'hésitez pas à me contacter sur le mail suivant : <a href="mailto:r.duflot@quick-shift.fr">r.duflot@quick-shift.fr</a></p>
     
