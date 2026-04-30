@@ -682,3 +682,13 @@ Uniquement si le CPU ou la RAM est inférieur à 20% sur 7 jours :
 - Rotation des clés ? 
 - Mise à jour automatique
 - Réparer API python
+- Alternative à wetransfer
+- pad.ws ?
+- url shortener (shlink ?)
+- beaverhabits (habbit tracker) 
+- fitness tracking (endurain, fittrackee, wger, wingfit)
+- maps alternativ
+- wanderer (trail database)
+- anchr ? 
+- bitwarden
+- snapotter lite (modif image)
