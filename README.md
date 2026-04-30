@@ -531,6 +531,15 @@ flowchart TB
     - Dans Répertoire -> Utilisateurs : Créé un utilisateur en complétant username, nom, email
     - Dans Répertoire -> Groupes : Associer le user au groupe souhaité 
     - Dans Utilisateurs, déplier les infos du user, cliquer sur Créer un lien de récupération, transmettre ce lien à l'utilisateur. 
+- Configuration SMTP : 
+    - Créer secret : 
+        ```
+        kubectl create secret generic authentik-smtp-secret \
+        --namespace authentik \
+        --from-literal=smtp-password='mot_de_passe_mail_ovh'
+        ```
+    - Ajouter les variables env au fichier [values](./k3s/authentik/authentik-values.yaml)
+    - Re deploy le helm 
 
 ### RemBG API + WebUI
 - Création du [yaml](./k3s/rembg/rembg.yaml)

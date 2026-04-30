@@ -1,4 +1,19 @@
 ---
+env:
+  AUTHENTIK_EMAIL__HOST: "ssl0.ovh.net"
+  AUTHENTIK_EMAIL__PORT: "465"
+  AUTHENTIK_EMAIL__USERNAME: "no-reply@quick-shift.fr"
+  AUTHENTIK_EMAIL__USE_SSL: "true"
+  AUTHENTIK_EMAIL__USE_TLS: "false"
+  AUTHENTIK_EMAIL__TIMEOUT: "10"
+  AUTHENTIK_EMAIL__FROM: "Quick-Shift <no-reply@quick-shift.fr>"
+
+envValueFrom:
+  AUTHENTIK_EMAIL__PASSWORD:
+    secretKeyRef:
+      name: authentik-smtp-secret
+      key: smtp-password
+
 authentik:
   error_reporting:
     enabled: false
