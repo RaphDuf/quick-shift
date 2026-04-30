@@ -9,6 +9,7 @@ data:
   # ==========================================
   account_welcome.html: |
     {% extends "email/base.html" %}
+    {% load i18n humanize %}
     {% block content %}
     <p>Bonjour <b>{{ user.name|default:user.username }}</b>,</p>
     
@@ -52,6 +53,7 @@ data:
   # ==========================================
   password_reset.html: |
     {% extends "email/base.html" %}
+    {% load i18n humanize %}
     {% block content %}
     <p>Bonjour <b>{{ user.name|default:user.username }}</b>,</p>
     
