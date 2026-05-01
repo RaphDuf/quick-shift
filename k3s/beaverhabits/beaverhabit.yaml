@@ -1,0 +1,94 @@
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: beaverhabits-pvc
+  namespace: services
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 1Gi
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: beaverhabits
+  namespace: services
+  labels:
+    app: beaverhabits
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: beaverhabits
+  template:
+    metadata:
+      labels:
+        app: beaverhabits
+    spec:
+      containers:
+        - name: beaverhabits
+          image: daya0576/beaverhabits:latest
+          ports:
+            - containerPort: 8080
+          env:
+            - name: TRUSTED_EMAIL_HEADER
+              value: "X-authentik-email"
+            - name: HABITS_STORAGE
+              value: "USER_DISK" 
+          volumeMounts:
+            - name: data
+              mountPath: /app/.user
+      volumes:
+        - name: data
+          persistentVolumeClaim:
+            claimName: beaverhabits-pvc
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: beaverhabits
+  namespace: services
+spec:
+  selector:
+    app: beaverhabits
+  ports:
+    - protocol: TCP
+      port: 8080
+      targetPort: 8080
+
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: beaverhabits
+  namespace: beaverhabits
+  annotations:
+    cert-manager.io/cluster-issuer: "letsencrypt-prod"
+    traefik.ingress.kubernetes.io/router.middlewares: "services-authentik-auth@kubernetescrd"
+    gethomepage.dev/enabled: "true"
+    gethomepage.dev/name: "Beaver Habits"
+    gethomepage.dev/description: "Suivi des habitudes"
+    gethomepage.dev/group: "Outils & Bureautique"
+    gethomepage.dev/icon: "beaverhabits.png"
+spec:
+  ingressClassName: traefik
+  tls:
+    - hosts:
+        - habits.quick-shift.fr
+      secretName: beaverhabits-tls
+  rules:
+    - host: habits.quick-shift.fr
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: beaverhabits
+                port:
+                  number: 8080
