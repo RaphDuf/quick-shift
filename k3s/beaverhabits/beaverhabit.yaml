@@ -66,7 +66,7 @@ apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
   name: beaverhabits
-  namespace: beaverhabits
+  namespace: services
   annotations:
     cert-manager.io/cluster-issuer: "letsencrypt-prod"
     traefik.ingress.kubernetes.io/router.middlewares: "services-authentik-auth@kubernetescrd"
