@@ -560,6 +560,12 @@ flowchart TB
     --set-string secretEnv.OIDC_CLIENT_SECRET="TON_CLIENT_SECRET_AUTHENTIK"
     ```
 > Pour upgrade la chart sans écraser le secret : `helm upgrade trek -f trek-values.yaml -n services trek/trek --reuse-values`
+- En tant qu'admin, dans les paramètres, onglet valeurs par défaut : définir les valeurs pour les users (format de date, ...). 
+- Dans API keys, ajouter une clé Google pour avoir les recommendations Google Maps :
+    - Aller sur [Google cloud console](https://console.cloud.google.com/)
+    - Dans le menu Projet (en haut à gauche), créer un nouveau et le sélectionner
+    - Aller dans Api et Services -> Bibliotheque : Activer Places API (New) 
+    - Dans Settings -> API keys : Ajouter la clé et enregister 
 
 
 
