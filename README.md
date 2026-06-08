@@ -567,6 +567,15 @@ flowchart TB
     - Aller dans Api et Services -> Bibliotheque : Activer Places API (New) 
     - Dans Settings -> API keys : Ajouter la clé et enregister 
 
+### Vaultwarden
+- Créer le Provider et App dans Authentik (https://vault.quick-shift.fr/sso)
+- Créer le secret pour l'admin : 
+    ```
+    kubectl create secret generic vaultwarden-admin-secret \
+        --namespace services \
+        --from-literal=ADMIN_TOKEN="xxx"
+    ``` 
+
 
 
 ## Ouverture des flux pour http/https

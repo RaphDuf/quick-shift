@@ -37,7 +37,10 @@ spec:
             - name: DOMAIN
               value: "https://vault.quick-shift.fr"
             - name: ADMIN_TOKEN
-              value: "(p$CepC,(3iz\Kb^i_Bb"
+              valueFrom:
+                secretKeyRef:
+                  name: vaultwarden-admin-secret
+                  key: ADMIN_TOKEN
             
             - name: SSO_ENABLED
               value: "true"
