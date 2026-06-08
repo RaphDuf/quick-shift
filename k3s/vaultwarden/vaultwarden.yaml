@@ -1,0 +1,101 @@
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: vaultwarden-pvc
+  namespace: services
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 2Gi
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: vaultwarden
+  namespace: services
+  labels:
+    app: vaultwarden
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: vaultwarden
+  template:
+    metadata:
+      labels:
+        app: vaultwarden
+    spec:
+      containers:
+        - name: vaultwarden
+          image: vaultwarden/server:latest
+          ports:
+            - containerPort: 80
+          env:
+            - name: DOMAIN
+              value: "https://vault.quick-shift.fr"
+            - name: ADMIN_TOKEN
+              value: "(p$CepC,(3iz\Kb^i_Bb"
+            
+            - name: SSO_ENABLED
+              value: "true"
+            - name: SSO_CLIENT_ID
+              value: "qSUYjNPiMyH4aCWDn94px7ia9pFFBU5H7u6tzRBO"
+            - name: SSO_CLIENT_SECRET
+              value: "yQVKBdDzHJ51Kruk5hc9OADQjD2pxF2dDw9GG5s0AV68vAxWn0JfFNVv6rtLVYIlbF2ZTyb78sOJe4BOY4HNVMzpnrZQFKLEJEpPZFFvcDAbvE5X8swxasZpFGLQN4jP"
+            - name: SSO_AUTHORITY
+              value: "https://auth.quick-shift.fr/application/o/vaultwarden/"
+            
+            - name: SIGNUPS_ALLOWED
+              value: "true"
+          volumeMounts:
+            - name: data
+              mountPath: /data
+      volumes:
+        - name: data
+          persistentVolumeClaim:
+            claimName: vaultwarden-pvc
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: vaultwarden
+  namespace: services
+spec:
+  selector:
+    app: vaultwarden
+  ports:
+    - port: 80
+      targetPort: 80
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: vaultwarden
+  namespace: services
+  annotations:
+    cert-manager.io/cluster-issuer: "letsencrypt-prod"
+    gethomepage.dev/enabled: "true"
+    gethomepage.dev/name: "Vaultwarden"
+    gethomepage.dev/description: "Gestionnaire de mots de passe"
+    gethomepage.dev/group: "Outils & Bureautique"
+    gethomepage.dev/icon: "bitwarden.png"
+spec:
+  ingressClassName: traefik
+  tls:
+    - hosts:
+        - vault.quick-shift.fr
+      secretName: vaultwarden-tls
+  rules:
+    - host: vault.quick-shift.fr
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: vaultwarden
+                port:
+                  number: 80
